@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab David TKJ - Simulasi Jaringan LAN</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#17243a;--line:#263852;--text:#e8f0fb;--muted:#91a4bf;--cyan:#36c5f0;--green:#35d39a;--red:#ff667a;--yellow:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#08111f,#101d32);color:var(--text);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
+header{padding:25px max(18px,calc((100% - 1200px)/2));background:#0d1829;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:clamp(24px,4vw,34px);letter-spacing:.3px}header p{margin:5px 0 0;color:var(--muted)}
+main{max-width:1200px;margin:22px auto;padding:0 16px 40px;display:grid;gap:18px}
+.panel{background:rgba(18,29,48,.96);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 12px 30px #0002}
+.panel h2{font-size:18px;margin:0 0 14px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.pill{padding:5px 10px;border-radius:30px;background:#19354a;color:var(--cyan);font-size:12px;font-weight:700}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:var(--panel2);padding:12px;border-radius:12px;border:1px solid var(--line)}.stat small{display:block;color:var(--muted)}.stat strong{font-size:22px}
+.topology{background:#0c1728;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:hidden}
+svg{width:100%;height:auto;min-height:270px}.wire{stroke:#46617e;stroke-width:4;stroke-linecap:round}.wire.active{stroke:var(--green);filter:drop-shadow(0 0 4px #35d39a)}.node rect{fill:#1b2b43;stroke:#54708f;stroke-width:2}.node.selected rect{stroke:var(--cyan);stroke-width:3}.node text{fill:#eaf4ff;font-size:13px;text-anchor:middle}.node .sub{fill:#9db0c9;font-size:10px}.node{cursor:pointer}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--green)}
+label{display:block;color:var(--muted);font-size:13px;margin:10px 0 5px}input,select{width:100%;padding:10px 11px;background:#0b1627;color:var(--text);border:1px solid #344965;border-radius:9px;outline:none}input:focus,select:focus{border-color:var(--cyan)}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+button{border:0;border-radius:9px;padding:10px 14px;background:var(--cyan);color:#071421;font-weight:750;cursor:pointer}button.secondary{background:#263a55;color:var(--text)}button.danger{background:#512938;color:#ffdce2}button:hover{filter:brightness(1.1)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}td{overflow-wrap:anywhere}
+.status{font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;background:#173b32;color:var(--green)}.status.off{background:#49232d;color:#ff9baa}
+.terminal{background:#07101c;border:1px solid #263852;border-radius:12px;padding:12px;min-height:210px;font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+#output{height:165px;overflow:auto;white-space:pre-wrap;color:#c5d6ea}.prompt{display:flex;gap:8px;margin-top:8px}.prompt input{font-family:inherit}.prompt button{white-space:nowrap}
+.note{color:var(--muted);font-size:12px;margin:10px 0 0}.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.formgrid{grid-template-columns:1fr}.panel{padding:14px}th,td{padding:8px 5px;font-size:12px}}
+
+/* ===== Visual refresh: modern network-lab interface ===== */
+:root{--bg:#07101f;--panel:#101d31;--panel2:#152640;--line:#263e5d;--text:#edf6ff;--muted:#9aafc9;--cyan:#58d8ff;--green:#49e0b0;--red:#ff7188;--yellow:#ffd477}
+body{background:radial-gradient(ellipse at 12% 0%,#17365a 0,transparent 34%),radial-gradient(ellipse at 92% 12%,#1b2853 0,transparent 30%),linear-gradient(145deg,#070e1b,#0b1729 55%,#101b31);background-attachment:fixed}
+.hero{padding:22px max(18px,calc((100% - 1200px)/2));background:linear-gradient(110deg,rgba(11,25,45,.97),rgba(17,31,58,.94));border-bottom:1px solid #294767;box-shadow:0 14px 40px #02081470}
+.hero-inner{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:16px}.brand-logo{width:76px;height:76px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(145deg,#173c61,#10233d);border:1px solid #3b6a91;box-shadow:0 8px 26px #0005,inset 0 1px #ffffff20}.brand-logo svg{width:60px;height:60px;min-height:0}
+.eyebrow{font-size:10px;font-weight:800;letter-spacing:2.4px;color:var(--cyan);margin-bottom:2px}
+h1{font-size:clamp(27px,4vw,38px);font-weight:850;letter-spacing:-1px}h1 span{color:var(--cyan)}
+header p{font-size:14px;margin:4px 0 0;color:#a9bdd5}
+.hero-meta{display:flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid #2b526b;border-radius:30px;background:#102b3b;color:#bcefff;font-size:11px;font-weight:800;letter-spacing:1px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px #49e0b01c,0 0 12px var(--green)}.version{padding:3px 7px;border-radius:6px;background:#203d59;color:#a8c9e7}
+main{margin-top:26px;gap:20px}
+.panel{background:linear-gradient(145deg,rgba(18,33,55,.97),rgba(13,25,43,.97));border:1px solid #2a405e;border-radius:18px;padding:20px;box-shadow:0 15px 38px #02091650,inset 0 1px #ffffff08;transition:transform .2s,border-color .2s}
+.panel:hover{border-color:#3d6286}
+.panel h2{font-size:17px;font-weight:800;letter-spacing:.1px;display:flex;align-items:center;gap:8px}
+.stats{gap:12px}.stat{position:relative;overflow:hidden;background:linear-gradient(145deg,#172d49,#112239);border:1px solid #2b4667;border-radius:15px;padding:15px 16px;box-shadow:0 8px 22px #02091635}
+.stat:after{content:"";position:absolute;width:70px;height:70px;border-radius:50%;right:-24px;top:-30px;background:#58d8ff0d}
+.stat small{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:750}.stat strong{display:block;margin-top:3px;font-size:27px;color:#f3fbff}
+.grid{gap:20px}.pill{background:#12354c;border:1px solid #245b79;color:#7be1ff;letter-spacing:.7px}
+.topology{background:linear-gradient(145deg,#091729,#0d2035);border:1px solid #294563;border-radius:15px;padding:15px}
+.wire{stroke:#42617f;stroke-width:4}.wire.active{stroke:var(--green);filter:drop-shadow(0 0 5px #49e0b080)}
+.node rect{fill:#172d48;stroke:#54789d;filter:drop-shadow(0 7px 8px #0005)}.node:hover rect,.node.selected rect{fill:#1b3b5c;stroke:var(--cyan);filter:drop-shadow(0 0 8px #58d8ff55)}
+.node text{font-weight:750}.node .sub{font-weight:500}
+input,select{background:#091729;border:1px solid #304966;border-radius:10px;padding:11px 12px;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #58d8ff19}
+label{font-size:12px;font-weight:700;letter-spacing:.2px;color:#b4c7dd}
+button{background:linear-gradient(135deg,#62ddff,#39b9ec);border:1px solid #8ce8ff;color:#062033;border-radius:10px;padding:11px 16px;box-shadow:0 5px 16px #23b9ed25;transition:transform .15s,filter .15s}
+button:hover{filter:brightness(1.08);transform:translateY(-1px)}button:active{transform:translateY(0)}
+button.secondary{background:linear-gradient(135deg,#263e5d,#1b304b);border:1px solid #3b5879;color:#e7f3ff;box-shadow:none}
+table{border-collapse:separate;border-spacing:0}th{background:#132741;color:#a9bfd8;text-transform:uppercase;font-size:10px;letter-spacing:.8px}th:first-child{border-radius:8px 0 0 0}th:last-child{border-radius:0 8px 0 0}td{background:#0d1b2e}tbody tr:hover td{background:#142943}
+.status{background:#103c37;border:1px solid #236b5d;color:#69edc1}.status.off{background:#492533;border:1px solid #7d3b50;color:#ff9baa}
+.terminal{background:#050d18;border:1px solid #29415d;border-radius:13px;box-shadow:inset 0 0 25px #0005}
+#output{color:#bdebdc}#command{background:#0b1b2d}.prompt button{padding-inline:16px}
+.note{line-height:1.65}.good{color:#62edbd}.bad{color:#ff8195}
+footer{padding:14px;border-top:1px solid #263e5d;margin-top:4px;letter-spacing:.3px}
+@media(max-width:600px){.hero{padding:17px}.brand-logo{width:62px;height:62px;border-radius:17px}.brand-logo svg{width:50px;height:50px}.hero-meta{margin-left:78px}.panel{padding:15px}.stat{padding:12px}.stat strong{font-size:23px}}
+
+</style>
+</head>
+<body>
+<header class="hero">
+ <div class="hero-inner">
+  <div class="brand">
+   <div class="brand-logo" aria-label="Logo jaringan Lab David TKJ">
+    <svg viewBox="0 0 100 100" role="img" aria-label="Logo jaringan berupa node yang saling terhubung">
+     <path d="M50 22 L23 70 M50 22 L77 70 M23 70 L77 70 M50 22 L50 82" fill="none" stroke="#73e3ff" stroke-width="5" stroke-linecap="round"/>
+     <rect x="39" y="9" width="22" height="22" rx="6" fill="#102a48" stroke="#73e3ff" stroke-width="4"/>
+     <rect x="11" y="62" width="24" height="24" rx="6" fill="#102a48" stroke="#73e3ff" stroke-width="4"/>
+     <rect x="65" y="62" width="24" height="24" rx="6" fill="#102a48" stroke="#73e3ff" stroke-width="4"/>
+     <circle cx="50" cy="82" r="8" fill="#45e0b0" stroke="#102a48" stroke-width="3"/>
+    </svg>
+   </div>
+   <div><div class="eyebrow">NETWORK LAB • TKJ</div><h1>Lab David <span>TKJ</span></h1><p>Simulasi Topologi &amp; Konfigurasi Jaringan LAN</p></div>
+  </div>
+  <div class="hero-meta"><span class="live-dot"></span> SIMULATOR AKTIF <span class="version">v1.0</span></div>
+ </div>
+</header>
+<main>
+<section class="stats">
+ <div class="stat"><small>Perangkat</small><strong id="deviceCount">5</strong></div>
+ <div class="stat"><small>Koneksi aktif</small><strong id="linkCount">4</strong></div>
+ <div class="stat"><small>PC online</small><strong id="onlineCount">4</strong></div>
+ <div class="stat"><small>Ping berhasil</small><strong id="pingCount">0</strong></div>
+</section>
+<div class="grid">
+<section class="panel">
+ <div class="topbar"><h2>① Topologi Jaringan LAN</h2><span class="pill">STAR TOPOLOGY</span></div>
+ <div class="topology">
+ <svg viewBox="0 0 640 330" role="img" aria-label="Topologi star dengan satu switch dan empat PC">
+  <line class="wire active" x1="320" y1="115" x2="95" y2="235"/><line class="wire active" x1="320" y1="115" x2="245" y2="235"/>
+  <line class="wire active" x1="320" y1="115" x2="395" y2="235"/><line class="wire active" x1="320" y1="115" x2="545" y2="235"/>
+  <g class="node" id="nodeSW" transform="translate(260 35)"><rect width="120" height="80" rx="12"/><text x="60" y="32">▤ SWITCH</text><text class="sub" x="60" y="53">SW-01 •  Layer 2</text></g>
+  <g class="node" data-pc="PC1" transform="translate(45 235)"><rect width="100" height="70" rx="10"/><text x="50" y="28">▣ PC 1</text><text class="sub" id="svgPC1" x="50" y="48">192.168.1.2</text></g>
+  <g class="node" data-pc="PC2" transform="translate(195 235)"><rect width="100" height="70" rx="10"/><text x="50" y="28">▣ PC 2</text><text class="sub" id="svgPC2" x="50" y="48">192.168.1.3</text></g>
+  <g class="node" data-pc="PC3" transform="translate(345 235)"><rect width="100" height="70" rx="10"/><text x="50" y="28">▣ PC 3</text><text class="sub" id="svgPC3" x="50" y="48">192.168.1.4</text></g>
+  <g class="node" data-pc="PC4" transform="translate(495 235)"><rect width="100" height="70" rx="10"/><text x="50" y="28">▣ PC 4</text><text class="sub" id="svgPC4" x="50" y="48">192.168.1.5</text></g>
+ </svg>
+ <div class="legend"><span><i class="dot"></i>Kabel terhubung</span><span>▣ PC / End Device</span><span>▤ Switch</span></div>
+ </div>
+ <p class="note">Klik perangkat PC pada gambar atau pilih dari menu konfigurasi. Semua PC terhubung ke switch dalam satu jaringan /24.</p>
+</section>
+<section class="panel">
+ <h2>② Konfigurasi Perangkat</h2>
+ <label for="device">Pilih perangkat</label><select id="device"><option>PC1</option><option>PC2</option><option>PC3</option><option>PC4</option></select>
+ <div class="formgrid">
+  <div><label for="ip">IP Address</label><input id="ip" value="192.168.1.2" placeholder="192.168.1.2"></div>
+  <div><label for="mask">Subnet Mask</label><input id="mask" value="255.255.255.0"></div>
+  <div><label for="gateway">Default Gateway</label><input id="gateway" value="192.168.1.1" placeholder="192.168.1.1"></div>
+  <div><label for="mac">MAC Address</label><input id="mac" value="02:00:00:00:00:01" disabled></div>
+ </div>
+ <div class="btnrow"><button id="saveBtn">Terapkan konfigurasi</button><button class="secondary" id="resetBtn">Reset default</button></div>
+ <p class="note" id="configMessage">Pilih perangkat untuk melihat konfigurasinya.</p>
+</section>
+</div>
+<section class="panel">
+ <div class="topbar"><h2>③ Tabel IP Address</h2><span class="pill">STATIC IPv4</span></div>
+ <div style="overflow-x:auto"><table><thead><tr><th>Perangkat</th><th>IP Address</th><th>Subnet Mask</th><th>Gateway</th><th>Status</th></tr></thead><tbody id="ipTable"></tbody></table></div>
+</section>
+<div class="grid">
+<section class="panel">
+ <h2>④ Uji Koneksi (PING)</h2>
+ <div class="formgrid">
+  <div><label for="source">Dari perangkat</label><select id="source"><option>PC1</option><option>PC2</option><option>PC3</option><option>PC4</option></select></div>
+  <div><label for="target">Tujuan IP / perangkat</label><input id="target" value="192.168.1.3" placeholder="192.168.1.3 atau PC2"></div>
+ </div>
+ <div class="btnrow"><button id="pingBtn">▶ Jalankan Ping</button><button class="secondary" id="allPingBtn">Tes semua PC</button></div>
+ <p class="note">Ping berhasil jika IP tujuan valid, unik, satu subnet, dan kedua perangkat aktif.</p>
+ <div id="pingResult" class="note" aria-live="polite">Belum ada pengujian.</div>
+</section>
+<section class="panel">
+ <h2>⑤ Terminal Jaringan</h2>
+ <div class="terminal"><div id="output">Lab David TKJ Terminal v1.0
+Ketik "help" untuk melihat daftar perintah.
+------------------------------------------------</div>
+ <div class="prompt"><input id="command" placeholder="Contoh: ping 192.168.1.3" autocomplete="off"><button id="runCommand">Jalankan</button></div></div>
+ <p class="note">Perintah tersedia: help, ipconfig, ping [IP], devices, clear.</p>
+</section>
+</div>
+<section class="panel">
+ <h2>⑥ Log Aktivitas</h2><div id="logs" class="note">[SYSTEM] Simulasi jaringan siap digunakan.</div>
+</section>
+<footer>Lab David TKJ • Media pembelajaran simulasi jaringan komputer • Versi 1.0</footer>
+</main>
+<script>
+const defaults={
+ PC1:{ip:"192.168.1.2",mask:"255.255.255.0",gateway:"192.168.1.1",mac:"02:00:00:00:00:01"},
+ PC2:{ip:"192.168.1.3",mask:"255.255.255.0",gateway:"192.168.1.1",mac:"02:00:00:00:00:02"},
+ PC3:{ip:"192.168.1.4",mask:"255.255.255.0",gateway:"192.168.1.1",mac:"02:00:00:00:00:03"},
+ PC4:{ip:"192.168.1.5",mask:"255.255.255.0",gateway:"192.168.1.1",mac:"02:00:00:00:00:04"}
+};
+let pcs=JSON.parse(JSON.stringify(defaults)),pings=0;
+const $=id=>document.getElementById(id);
+function log(s){$("logs").innerHTML=`<div>${new Date().toLocaleTimeString()} — ${escapeHTML(s)}</div>`+$("logs").innerHTML}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function validIP(ip){let a=ip.split(".");return a.length===4&&a.every(x=>/^\d{1,3}$/.test(x)&&+x>=0&&+x<=255)}
+function ipNum(ip){return ip.split(".").reduce((n,x)=>(n*256)+Number(x),0)>>>0}
+function sameSubnet(a,b,m){return (ipNum(a)&ipNum(m))===(ipNum(b)&ipNum(m))}
+function loadForm(){let d=pcs[$("device").value];$("ip").value=d.ip;$("mask").value=d.mask;$("gateway").value=d.gateway;$("mac").value=d.mac;$("configMessage").textContent="Mengedit "+$("device").value}
+function render(){
+ let rows="";Object.keys(pcs).forEach(k=>{let d=pcs[k],duplicate=Object.keys(pcs).some(o=>o!==k&&pcs[o].ip===d.ip);let ok=validIP(d.ip)&&validIP(d.mask)&&!duplicate;rows+=`<tr><td><b>${k}</b></td><td>${escapeHTML(d.ip)}</td><td>${escapeHTML(d.mask)}</td><td>${escapeHTML(d.gateway)}</td><td><span class="status ${ok?"":"off"}">${ok?"ONLINE":"ERROR IP"}</span></td></tr>`;$("svg"+k).textContent=d.ip;$("svg"+k).setAttribute("fill",ok?"#9db0c9":"#ff667a")});
+ $("ipTable").innerHTML=rows;$("deviceCount").textContent="5";$("linkCount").textContent="4";$("onlineCount").textContent=Object.keys(pcs).filter(k=>validIP(pcs[k].ip)&&validIP(pcs[k].mask)&&!Object.keys(pcs).some(o=>o!==k&&pcs[o].ip===pcs[k].ip)).length;
+}
+function save(){let k=$("device").value,ip=$("ip").value.trim(),mask=$("mask").value.trim(),gw=$("gateway").value.trim();
+ if(!validIP(ip)||!validIP(mask)||!validIP(gw)){ $("configMessage").innerHTML='<span class="bad">Gagal: format IP, subnet mask, atau gateway tidak valid.</span>';return}
+ if(Object.keys(pcs).some(o=>o!==k&&pcs[o].ip===ip)){ $("configMessage").innerHTML='<span class="bad">Gagal: IP Address sudah digunakan perangkat lain.</span>';return}
+ pcs[k]={...pcs[k],ip,mask,gateway:gw};render();$("configMessage").innerHTML='<span class="good">Konfigurasi '+k+' berhasil diterapkan.</span>';log("Konfigurasi "+k+" diubah: "+ip+" / "+mask)}
+function resolve(t){t=t.trim().toUpperCase();if(pcs[t])return t;return Object.keys(pcs).find(k=>pcs[k].ip===t)||null}
+function ping(src,target,show=true){
+ let dst=resolve(target),a=pcs[src],success=false,reason="";
+ if(!validIP(a.ip)||!validIP(a.mask))reason="Konfigurasi IP sumber tidak valid.";
+ else if(!dst)reason="Host tujuan tidak ditemukan pada jaringan simulasi.";
+ else if(dst===src)reason="Alamat tujuan adalah perangkat sumber itu sendiri.";
+ else if(!validIP(pcs[dst].ip)||!validIP(pcs[dst].mask))reason="IP tujuan tidak valid.";
+ else if(a.ip===pcs[dst].ip)reason="Terjadi konflik IP Address.";
+ else if(!sameSubnet(a.ip,pcs[dst].ip,a.mask)||!sameSubnet(a.ip,pcs[dst].ip,pcs[dst].mask)||a.mask!==pcs[dst].mask)reason="Host berada pada subnet berbeda atau subnet mask tidak cocok.";
+ else success=true;
+ if(success){pings++;$("pingCount").textContent=pings;let msg=`PING ${pcs[dst].ip} dari ${src} (${a.ip})\nReply from ${pcs[dst].ip}: bytes=32 time=1ms TTL=64\nReply from ${pcs[dst].ip}: bytes=32 time=1ms TTL=64\nReply from ${pcs[dst].ip}: bytes=32 time=2ms TTL=64\nReply from ${pcs[dst].ip}: bytes=32 time=1ms TTL=64\nPackets: Sent = 4, Received = 4, Lost = 0 (0% loss)`;if(show)$("pingResult").innerHTML='<pre class="good">'+escapeHTML(msg)+'</pre>';log("PING sukses: "+src+" → "+dst);return {ok:true,text:msg}}
+ let msg=`PING gagal dari ${src} ke ${target}\nRequest timed out / Destination unreachable\nAlasan: ${reason}`;if(show)$("pingResult").innerHTML='<pre class="bad">'+escapeHTML(msg)+'</pre>';log("PING gagal: "+src+" → "+target+" ("+reason+")");return {ok:false,text:msg}
+}
+function terminal(s){$("output").textContent+='\n\n> '+s;let p=s.trim().split(/\s+/),cmd=(p[0]||"").toLowerCase(),src=$("source").value;
+ if(cmd==="help")$("output").textContent+='\nPerintah:\n help       - bantuan\n ipconfig   - konfigurasi PC sumber\n ping [IP]  - uji koneksi\n devices    - daftar perangkat\n clear      - bersihkan terminal';
+ else if(cmd==="ipconfig"){let d=pcs[src];$("output").textContent+=`\nEthernet adapter ${src}:\n IPv4 Address . . . : ${d.ip}\n Subnet Mask  . . . : ${d.mask}\n Default Gateway . : ${d.gateway}\n MAC Address . . . : ${d.mac}`}
+ else if(cmd==="ping"&&p[1])$("output").textContent+='\n'+ping(src,p[1],false).text;
+ else if(cmd==="devices")$("output").textContent+='\n'+Object.entries(pcs).map(([k,v])=>`${k.padEnd(4)} ${v.ip}`).join('\n')+'\nSW-01  Layer 2 switch';
+ else if(cmd==="clear")$("output").textContent="Terminal dibersihkan.";
+ else $("output").textContent+='\nPerintah tidak dikenal. Ketik help.';
+ $("output").scrollTop=$("output").scrollHeight}
+$("device").addEventListener("change",loadForm);$("saveBtn").addEventListener("click",save);
+$("resetBtn").addEventListener("click",()=>{pcs=JSON.parse(JSON.stringify(defaults));loadForm();render();log("Konfigurasi dikembalikan ke default")});
+$("pingBtn").addEventListener("click",()=>ping($("source").value,$("target").value));
+$("allPingBtn").addEventListener("click",()=>{let names=Object.keys(pcs),ok=0;for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)if(ping(names[i],names[j],false).ok)ok++;$("pingResult").innerHTML=`<b>Pengujian seluruh pasangan selesai.</b><br>${ok} dari 6 pasangan berhasil.`});
+$("runCommand").addEventListener("click",()=>{let v=$("command").value;if(v.trim()){terminal(v);$("command").value=""}});
+$("command").addEventListener("keydown",e=>{if(e.key==="Enter")$("runCommand").click()});
+document.querySelectorAll("[data-pc]").forEach(n=>n.addEventListener("click",()=>{$("device").value=n.dataset.pc;loadForm();document.querySelectorAll(".node").forEach(x=>x.classList.remove("selected"));n.classList.add("selected")}));
+$("source").addEventListener("change",()=>{let k=$("source").value;$("target").value=pcs[Object.keys(pcs).find(x=>x!==k)].ip});
+render();loadForm();
+</script>
+</body></html>
